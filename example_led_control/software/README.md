@@ -1,53 +1,22 @@
-## Setting up the environments
-
-### install software dependencies
-```
-sudo rm /var/lib/apt/lists/lock
-sudo apt-get update
-sudo apt-get install python3-pip
-sudo apt-get install python3-pyqtgraph
-sudo apt-get install python3-pyqt5
-pip3 install qtpy pyserial
-```
-
-### install camera drivers
-If you're using The Imaging Source cameras, follow instructions on https://github.com/TheImagingSource/tiscamera 
-
-If you're using Daheng cameras, follow instructions in the `drivers and libraries/daheng camera` folder
-
-
-
-### enable access to serial ports without sudo
-
-```
-sudo usermod -aG dialout $USER
-```
- 
-### (optional) install pytorch and torchvision on Jetson Nano
-Follow instructions on https://forums.developer.nvidia.com/t/pytorch-for-jetson-nano-version-1-5-0-now-available/72048
-
-```
-sudo apt-get install libhdf5-serial-dev hdf5-tools libhdf5-dev zlib1g-dev zip libjpeg8-dev liblapack-dev libblas-dev gfortran
-sudo apt-get install python3-pip libopenblas-base libopenmpi-dev 
-pip3 install -U pip testresources setuptools
-pip3 install Cython
-wget https://nvidia.box.com/shared/static/3ibazbiwtkl181n95n9em3wtrca7tdzp.whl -o torch-1.5.0-cp36-cp36m-linux_aarch64.whl
-pip3 install torch-1.5.0-cp36-cp36m-linux_aarch64.whl
-```
-```
-sudo apt-get install libjpeg-dev zlib1g-dev
-git clone --branch torchvision v0.6.0 https://github.com/pytorch/vision torchvision   # see below for version of torchvision to download
-cd torchvision
-sudo python3 setup.py install
-```
-## Using the software
-Use one of the following to start the program
+## Running the code
+On MacOS and Ubuntu, open the terminal, `cd` to this `sofrware` directory, and enter
 ```
 python3 main.py
-python3 main_camera_only.py
-python3 main_motion_only.py
 ```
-To start the program when no hardware is connected, use
+On Windows, open the CMD, `cd` to this `sofrware` directory, and enter
 ```
-python3 main_simulation.py
+py main.py
 ```
+## Understand the code
+### Code Structure
+- `main.py` is entry point of the software.
+
+- `control/widgets.py` implements the widget classes, the widgets, when instantiated, are the interface between the user and the code execution. 
+
+- `control/core.py` implements classes of objects that gets the work done. These objects do not directly interacts with the user but through widgets implemented. In this example, since we're just turning on/off the LED through a button, we did not implement a class for this simple task. If we were to follow the pattern used in the octopi/squid codebase, we'd create an LEDController class, that contains a function that can be called by the widget to turn on/off the LED.
+
+- `control/microcontroller.py` implements the communication methods between the microcontroller and the software, and abstract the micontroller hardware as an object that the software can directly interact with (e.g. a `set_LED_state` function is implemented that can be directly called) 
+
+- `control/_def.py` difines constants used in the code, e.g. length of the command packet (in bytes) that's sent to the microcontroller through the serial interface.
+
+- `control/gui.py` is what connects everything together. It create the gui class, that will be instantiated by `main.py`. Within the class, widgets and other objects that constitute the code are instantiated and linked together, either through passing references of objects (e.g. `self.ledControlWidget = widgets.LEDControlWidget(self.microcontroller)`, or by connecting signals and slots using the `connect` method.
