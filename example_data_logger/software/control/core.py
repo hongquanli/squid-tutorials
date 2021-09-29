@@ -24,25 +24,34 @@ class Waveforms(QObject):
     signal_plot2 = Signal(np.ndarray,np.ndarray)
     signal_plot3 = Signal(np.ndarray,np.ndarray)
 
-    signal_ch1 = Signal(str)
-    signal_ch2 = Signal(str)
-    signal_ch3 = Signal(str)
+    signal_readings = Signal(np.ndarray)
+    signal_plots = Signal(np.ndarray,np.ndarray)
 
     def __init__(self,microcontroller):
         QObject.__init__(self)
         self.file = open(str(Path.home()) + "/Downloads/" + datetime.now().strftime('%Y-%m-%d %H-%M-%-S.%f') + ".csv", "w+")
         # self.file.write('Time (s),Paw (cmH2O),Flow (l/min),Volume (ml),Vt (ml),Ti (s),RR (/min),PEEP (cmH2O)\n')
         self.microcontroller = microcontroller
-        self.ch1 = 0
-        self.ch2 = 0
-        self.ch3 = 0
+
         self.time = 0
-        self.ch1_array = np.array([])
-        self.ch2_array = np.array([])
-        self.ch3_array = np.array([])
         self.time_array = np.array([])
-        self.temp1_array = np.array([])
-        self.temp2_array = np.array([])
+
+        self.ch = {}
+        for i in range(NUMBER_OF_CHANNELS):
+            self.ch[str(i)] = 0
+
+        self.temperature = {}
+        for i in range(NUMBER_OF_CHANNELS):
+            self.temperature[str(i)] = 0
+
+        self.ch_array = {}
+        for i in range(NUMBER_OF_CHANNELS):
+            self.ch_array[str(i)] = np.array([])
+
+        self.temperature_array = {}
+        for i in range(NUMBER_OF_CHANNELS):
+            self.temperature_array[str(i)] = np.array([])
+
         self.timer_update_waveform = QTimer()
         self.timer_update_waveform.setInterval(MCU.DATA_INTERVAL_ms/2)
         self.timer_update_waveform.timeout.connect(self.update_waveforms)
@@ -72,7 +81,7 @@ class Waveforms(QObject):
       
         if SIMULATION:
             # test plotting multiple data points at a time
-            #for i in range(MCU.TIMEPOINT_PER_UPDATE):
+            '''
             t_chunck = np.array([])
             ch1_chunck = np.array([])
             ch2_chunck = np.array([])
@@ -98,22 +107,25 @@ class Waveforms(QObject):
             self.signal_plot1.emit(self.time_array,self.ch1_array)
             self.signal_plot2.emit(self.time_array,self.ch2_array)
             self.signal_plot3.emit(self.time_array,self.ch3_array)
-            self.signal_ch1.emit("{:.2f}".format(self.ch1))
-            self.signal_ch2.emit("{:.2f}".format(self.ch2))
-            self.signal_ch3.emit("{:.2f}".format(self.ch3))
 
+            self.signal_readings['1'].emit("{:.2f}".format(self.ch1))
+            self.signal_readings['2'].emit("{:.2f}".format(self.ch2))
+            self.signal_readings['3'].emit("{:.2f}".format(self.ch3))
+            '''
         else:
             readout = self.microcontroller.read_received_packet_nowait()
             if readout is not None:
 
                 self.time_now = time.time()
 
+                # chunck of measurements, n = TIMEPOINT_PER_UPDATE
                 t_chunck = np.array([])
-                ch1_chunck = np.array([])
-                ch2_chunck = np.array([])
-                ch3_chunck = np.array([])
-                temp1_chunck = np.array([])
-                temp2_chunck = np.array([])
+                ch_chunck = {}
+                for k in range(NUMBER_OF_CHANNELS):
+                    ch_chunck[str(k)] = np.array([])
+                temperature_chunck = {}
+                for k in range(NUMBER_OF_CHANNELS):
+                    temperature_chunck[str(k)] = np.array([])
 
                 for i in range(MCU.TIMEPOINT_PER_UPDATE):
                     # time
@@ -122,50 +134,63 @@ class Waveforms(QObject):
                         self.time_ticks_start = self.time_ticks
                         self.first_run = False
                     self.time = (self.time_ticks - self.time_ticks_start)*MCU.TIMER_PERIOD_ms/1000
-                    self.ch1 = utils.unsigned_to_unsigned(readout[i*MCU.RECORD_LENGTH_BYTE+4:i*MCU.RECORD_LENGTH_BYTE+6],2)
-                    self.ch2 = utils.unsigned_to_unsigned(readout[i*MCU.RECORD_LENGTH_BYTE+6:i*MCU.RECORD_LENGTH_BYTE+8],2)
-                    self.ch3 = utils.unsigned_to_unsigned(readout[i*MCU.RECORD_LENGTH_BYTE+8:i*MCU.RECORD_LENGTH_BYTE+10],2)
-                    # self.temp1 = utils.DACs_to_temp(self.ch1,self.ch2,1977)
-                    # self.temp2 = utils.DACs_to_temp(self.ch1,self.ch3,1980)
-                    self.temp1 = 0
-                    self.temp2 = 0
 
-                    record_from_MCU = (
-                        str(self.time_ticks) + '\t' + str(self.ch1) + '\t' + "{:.2f}".format(self.ch2) + '\t' + "{:.2f}".format(self.temp1) + '\t' + "{:.2f}".format(self.temp2) )
+                    # channel readings
+                    for k in range(NUMBER_OF_CHANNELS):
+                        self.ch[str(k)] = utils.unsigned_to_unsigned(readout[i*MCU.RECORD_LENGTH_BYTE+4+k*2:i*MCU.RECORD_LENGTH_BYTE+6+k*2],2)
+                        ch_chunck[str(k)] = np.append(ch_chunck[str(k)],self.ch[str(k)])
+
+                    # calculate temperature
+                    for k in range(NUMBER_OF_CHANNELS-1):
+                        self.temperature[str(k)] = utils.DACs_to_temp(self.ch[str(NUMBER_OF_CHANNELS-1)],self.ch[str(k)],100000)
+                        temperature_chunck[str(k)] = np.append(temperature_chunck[str(k)],self.temperature[str(k)])
+
+                    # line to write
+                    record_from_MCU = str(self.time_ticks) + '\t'
+                    for k in range(NUMBER_OF_CHANNELS):
+                        record_from_MCU = record_from_MCU + str(self.ch[str(k)]) + '\t'
+                    for k in range(NUMBER_OF_CHANNELS-1):
+                        record_from_MCU = record_from_MCU + str(self.temperature[str(k)]) + '\t'
                     record_settings = (str(self.time_now))
                    
                     # saved variables
                     if self.logging_is_on:
-                        self.file.write(record_from_MCU + '\t' + record_settings + '\n')
+                        self.file.write(record_from_MCU + record_settings + '\n')
 
                     # append variables for plotting
                     t_chunck = np.append(t_chunck,self.time)
-                    ch1_chunck = np.append(ch1_chunck,self.ch1)
-                    ch2_chunck = np.append(ch2_chunck,self.ch2)
-                    ch3_chunck = np.append(ch3_chunck,self.ch3)
-                    # temp1_chunck = np.append(temp1_chunck,self.temp1)
-                    # temp2_chunck = np.append(temp2_chunck,self.temp2)
 
-                self.ch1_array = np.append(self.ch1_array,ch1_chunck)
-                self.ch2_array = np.append(self.ch2_array,ch2_chunck)
-                self.ch3_array = np.append(self.ch3_array,ch3_chunck)
                 self.time_array = np.append(self.time_array,t_chunck)
-                # self.temp1_array = np.append(self.temp1_array,temp1_chunck)
-                # self.temp2_array = np.append(self.temp2_array,temp2_chunck)
+                for k in range(NUMBER_OF_CHANNELS):
+                    self.ch_array[str(k)] = np.append(self.ch_array[str(k)],ch_chunck[str(k)])
+                for k in range(NUMBER_OF_CHANNELS-1):
+                    self.temperature_array[str(k)] = np.append(self.temperature_array[str(k)],temperature_chunck[str(k)])
 
-                # reduce display refresh rate
+                # emit signals with reduced display refresh rate
                 self.counter_display = self.counter_display + 1
                 if self.counter_display>=1:
                     self.counter_display = 0
-
-                    self.signal_plot1.emit(self.time_array,self.ch1_array)
-                    self.signal_plot2.emit(self.time_array,self.ch2_array)
-                    self.signal_ch1.emit("{:.2f}".format(self.ch1))
-                    self.signal_ch2.emit("{:.2f}".format(self.ch2))
-                    # self.signal_plot1.emit(self.time_array,self.temp1_array)
-                    # self.signal_plot2.emit(self.time_array,self.temp2_array)
-                    # self.signal_ch1.emit("{:.2f}".format(self.temp1))
-                    # self.signal_ch2.emit("{:.2f}".format(self.temp2))
+                    # emit plots
+                    if PLOT_TEMPERATURE:
+                        plot_arrays = self.temperature_array[str(0)]
+                        for k in range(1,NUMBER_OF_CHANNELS_DISPLAY):
+                            plot_arrays = np.vstack((plot_arrays,self.temperature_array[str(k)]))
+                        self.signal_plots.emit(self.time_array,plot_arrays)
+                        # emit readings
+                        readings_to_display = np.array([])
+                        for k in range(NUMBER_OF_CHANNELS_DISPLAY):
+                            readings_to_display = np.append(readings_to_display,self.temperature[str(k)])
+                        self.signal_readings.emit(readings_to_display)
+                    else:
+                        plot_arrays = self.ch_array[str(0)]
+                        for k in range(1,NUMBER_OF_CHANNELS_DISPLAY):
+                            plot_arrays = np.vstack((plot_arrays,self.ch_array[str(k)]))
+                        self.signal_plots.emit(self.time_array,plot_arrays)
+                        # emit readings
+                        readings_to_display = np.array([])
+                        for k in range(NUMBER_OF_CHANNELS_DISPLAY):
+                            readings_to_display = np.append(readings_to_display,self.ch[str(k)])
+                        self.signal_readings.emit(readings_to_display)
 
         # file flushing
         if self.logging_is_on:

@@ -35,8 +35,8 @@ class ControlPanel(QFrame):
 		self.btn_logging_onoff.setCheckable(True)
 		self.btn_logging_onoff.setChecked(True)
 
-		# self.label_print = QLabel()
-		# self.label_print.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+		# self.label_channel_readings_print = QLabel()
+		# self.label_channel_readings_print.setFrameStyle(QFrame.Panel | QFrame.Sunken)
 
 		grid_line2 = QHBoxLayout()
 		grid_line2.addWidget(QLabel('File Prefix'))
@@ -44,42 +44,35 @@ class ControlPanel(QFrame):
 		grid_line2.addWidget(self.btn_logging_onoff)
 
 		# grid_line11 = QGridLayout()
-		# grid_line11.addWidget(self.label_print,0,0,10,0)
+		# grid_line11.addWidget(self.label_channel_readings_print,0,0,10,0)
 
 		# for displaying stepper position and flow/pressure measurements
-		self.label_ch1 = QLabel()
-		self.label_ch1.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-		self.label_ch1.setFixedWidth(50)
-		self.label_ch2 = QLabel()
-		self.label_ch2.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-		self.label_ch2.setFixedWidth(50)
-		self.label_ch3 = QLabel()
-		self.label_ch3.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-		self.label_ch3.setFixedWidth(50)
-
-		# self.label_print = QLabel()
-		# self.label_print.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+		self.label_channel_readings = {}
+		for i in range(NUMBER_OF_CHANNELS_DISPLAY):
+			self.label_channel_readings[str(i)] = QLabel()
+			self.label_channel_readings[str(i)].setFrameStyle(QFrame.Panel | QFrame.Sunken)
+			self.label_channel_readings[str(i)].setFixedWidth(50)
 
 		grid_line3 = QHBoxLayout()
-		grid_line3.addWidget(QLabel('ch1'))
-		grid_line3.addWidget(self.label_ch1)
-		grid_line3.addWidget(QLabel('ch2'))
-		grid_line3.addWidget(self.label_ch2)
-		# grid_line3.addWidget(QLabel('temperature (degree C)'))
-		# grid_line3.addWidget(self.label_ch3)
+		for i in range(NUMBER_OF_CHANNELS_DISPLAY):
+			grid_line3.addWidget(QLabel('ch' + str(i)))
+			grid_line3.addWidget(self.label_channel_readings[str(i)])
 		
 		self.grid = QGridLayout()
 		self.grid.addLayout(grid_line2,2,0)
 		self.grid.addLayout(grid_line3,3,0)
-		# self.grid.addWidget(self.label_print,3,0,1,8)
+		# self.grid.addWidget(self.label_channel_readings_print,3,0,1,8)
 
 		self.setLayout(self.grid)
 		self.btn_logging_onoff.clicked.connect(self.logging_onoff)
 
 	def logging_onoff(self,state):
 		self.signal_logging_onoff.emit(state,self.lineEdit_experimentID.text())
-		
 
+	def display_readings(self,readings):
+		for i in range(NUMBER_OF_CHANNELS_DISPLAY):
+			self.label_channel_readings[str(i)].setText(str(readings[i]))
+		
 # from Deepak
 class PlotWidget(pg.GraphicsLayoutWidget):
 
@@ -138,7 +131,7 @@ class PlotWidget(pg.GraphicsLayoutWidget):
 			self.right_Y_data.popleft()
 		
 		# Set the data 
-		self.label = PLOT_UNITS[self.title]
+		self.label_channel_readings = PLOT_UNITS[self.title]
 		self.left_Abs = np.array(self.left_X_data)
 		self.left_Ord = np.array(self.left_Y_data)
 		self.right_Abs = np.array(self.right_X_data)
@@ -173,25 +166,18 @@ class WaveformDisplay(QFrame):
 		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
 	def add_components(self):
-		# self.plotWidgets = {key: PlotWidget(title = key, color = 'b') for key in PLOTS}
-		# self.plotWidgets['Airway Pressure'].plot1.setYRange(min=WAVEFORMS.PAW_MIN,max=WAVEFORMS.PAW_MAX)
-		# self.plotWidgets['Flow Rate'].plot1.setYRange(min=WAVEFORMS.FLOW_MIN,max=WAVEFORMS.FLOW_MAX)
-		# self.plotWidgets['Volume'].plot1.setYRange(min=WAVEFORMS.V_MIN,max=WAVEFORMS.V_MAX)
+		self.plotWidget = {}
+		for i in range(NUMBER_OF_CHANNELS_DISPLAY):
+			self.plotWidget[str(i)] = PlotWidget()
 
-		# grid = QGridLayout() 
-		# for ii, key in enumerate(PLOTS):
-		# 	grid.addWidget(self.plotWidgets[key], ii, 0,1,2)
-		# self.setLayout(grid)
-
-		self.plotWidget = []
-		n = 2
-		for i in range(n):
-			self.plotWidget.append(PlotWidget())
 		layout = QGridLayout() #layout = QStackedLayout()
-		for i in range(n):
-			layout.addWidget(self.plotWidget[i],i,0)
+		for i in range(NUMBER_OF_CHANNELS_DISPLAY):
+			layout.addWidget(self.plotWidget[str(i)],i,0)
 		self.setLayout(layout)
 
+	def plot(self,time,data):
+		for i in range(NUMBER_OF_CHANNELS_DISPLAY):
+			self.plotWidget[str(i)].plot(time,data[i,:])
 
 class PlotWidget(pg.GraphicsLayoutWidget):
 	def __init__(self, window_title='',parent=None):

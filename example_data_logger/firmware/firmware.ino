@@ -5,7 +5,7 @@
 /***************************************************************************************************/
 static const float TIMER_PERIOD_us = 5000; // in us
 static const bool USE_SERIAL_MONITOR = false; // for debug
-static const int MSG_LENGTH = 50*10;
+static const int MSG_LENGTH = 25*20;
 
 static const int CMD_LENGTH = 4;
 byte buffer_rx[500];
@@ -34,6 +34,11 @@ uint8_t cmd[1];
 uint16_t ch1;
 uint16_t ch2;
 uint16_t ch3;
+uint16_t ch4;
+uint16_t ch5;
+uint16_t ch6;
+uint16_t ch7;
+uint16_t ch8;
 
 /***************************************************************************************************/
 /******************************************* setup *************************************************/
@@ -82,9 +87,14 @@ void loop()
 
   if (flag_read_sensor)
   {
-    ch1 = analogRead(A1);
-    ch2 = analogRead(A2);
-    ch3 = analogRead(A3);
+    ch1 = analogRead(A0);
+    ch2 = analogRead(A1);
+    ch3 = analogRead(A2);
+    ch4 = analogRead(A3);
+    ch5 = analogRead(A4);
+    ch6 = analogRead(A5);
+    ch7 = analogRead(A6);
+    ch8 = analogRead(A7);
     flag_read_sensor = false;
   }
 
@@ -109,6 +119,26 @@ void loop()
     // field 4 ch3
     buffer_tx[buffer_tx_ptr++] = byte(ch3 >> 8);
     buffer_tx[buffer_tx_ptr++] = byte(ch3 % 256);
+
+    // field 5 ch4
+    buffer_tx[buffer_tx_ptr++] = byte(ch4 >> 8);
+    buffer_tx[buffer_tx_ptr++] = byte(ch4 % 256);
+
+    // field 6 ch5
+    buffer_tx[buffer_tx_ptr++] = byte(ch5 >> 8);
+    buffer_tx[buffer_tx_ptr++] = byte(ch5 % 256);
+
+    // field 7 ch6
+    buffer_tx[buffer_tx_ptr++] = byte(ch6 >> 8);
+    buffer_tx[buffer_tx_ptr++] = byte(ch6 % 256);
+
+    // field 8 ch7
+    buffer_tx[buffer_tx_ptr++] = byte(ch7 >> 8);
+    buffer_tx[buffer_tx_ptr++] = byte(ch7 % 256);
+
+    // field 9 ch8
+    buffer_tx[buffer_tx_ptr++] = byte(ch8 >> 8);
+    buffer_tx[buffer_tx_ptr++] = byte(ch8 % 256);
 
     if (buffer_tx_ptr == MSG_LENGTH)
     {
