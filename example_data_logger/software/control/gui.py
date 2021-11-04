@@ -2,6 +2,7 @@
 import os 
 os.environ["QT_API"] = "pyqt5"
 import qtpy
+import argparse
 
 # qt libraries
 from qtpy.QtCore import *
@@ -13,6 +14,10 @@ import control.widgets as widgets
 import control.core as core
 import control.microcontroller as microcontroller
 from control._def import *
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--simulation", help="Run the GUI with simulated image streams.", action = 'store_true')
+args = parser.parse_args()
 
 class VentDevGUI(QMainWindow):
 

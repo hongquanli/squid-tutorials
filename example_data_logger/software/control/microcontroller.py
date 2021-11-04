@@ -87,6 +87,7 @@ class Microcontroller_Simulation():
     def __init__(self,parent=None):
         self.tx_buffer_length = MCU.CMD_LENGTH
         self.rx_buffer_length = MCU.MSG_LENGTH
+        self.t = 0
 
     def close(self):
         pass
@@ -95,4 +96,15 @@ class Microcontroller_Simulation():
         pass
 
     def read_received_packet_nowait(self):
-        return None
+        data = bytearray(MCU.MSG_LENGTH)
+        ptr = 0
+        for k in range(MCU.TIMEPOINT_PER_UPDATE):
+            self.t = self.t + 1
+            data[ptr+0] = int(self.t >> 24)
+            data[ptr+1] = int((self.t >> 16) & 0xff)
+            data[ptr+2] = int((self.t >> 8) & 0xff)
+            data[ptr+3] = int(self.t & 0xff)
+            for i in range(NUMBER_OF_CHANNELS*2):
+                data[ptr+4+i] = np.random.bytes(1)[0]
+            ptr = ptr + MCU.RECORD_LENGTH_BYTE
+        return data
