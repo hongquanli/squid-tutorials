@@ -9,6 +9,12 @@ On Windows, open the CMD, `cd` to the `sofrware` directory, and enter
 ```
 py main.py
 ```
+
+If you want to run the code without connecting an Arduino, you can add "--simulation":
+```
+python3 main.py --simulation
+```
+
 ## Understand the code
 ### Software code Structure
 - `main.py` is entry point of the software.
