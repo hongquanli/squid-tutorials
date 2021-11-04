@@ -27,3 +27,6 @@ Below is a screenshot of the software in simulation mode
 
 ## Full software
 Full software under active development can be found at https://github.com/hongquanli/octopi-research
+
+## Understanding the code
+To understand the structure of the code, refer to https://github.com/hongquanli/squid-tutorials/tree/main/example_led_control/software. After that the code here should be self-explanatory. 
