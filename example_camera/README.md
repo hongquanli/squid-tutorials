@@ -1,3 +1,6 @@
+Below is a screenshot of the software in simulation mode
+![alt text](https://i.imgur.com/9A46CFu.png)
+
 ## Setting up the environments
 
 ### install software dependencies
@@ -22,8 +25,6 @@ To run the program with hardware connected, use the following
 ```
 python3 main.py
 ```
-Below is a screenshot of the software in simulation mode
-![alt text](https://i.imgur.com/9A46CFu.png)
 
 ## Full software
 Full software under active development can be found at https://github.com/hongquanli/octopi-research
