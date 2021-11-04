@@ -28,7 +28,7 @@ class OctopiGUI(QMainWindow):
 			self.microcontroller = microcontroller.Microcontroller_Simulation()
 		else:
 			self.camera = camera.Camera(sn=17910089)
-			self.microcontroller = microcontroller.Microcontroller()
+			self.microcontroller = microcontroller.Microcontroller_Simulation()
 		
 		self.configurationManager = core.ConfigurationManager()
 		self.streamHandler = core.StreamHandler()
