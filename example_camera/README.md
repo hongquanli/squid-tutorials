@@ -8,7 +8,6 @@ sudo apt-get install python3-pyqtgraph
 sudo apt-get install python3-pyqt5
 pip3 install qtpy pyserial
 ```
-
 ### install camera drivers
 If you're using The Imaging Source cameras, follow instructions on https://github.com/TheImagingSource/tiscamera 
 
@@ -23,6 +22,8 @@ To run the program with hardware connected, use the following
 ```
 python3 main.py
 ```
+Below is a screenshot of the software in simulation mode
+![alt text](https://i.imgur.com/9A46CFu.png)
 
 ## Full software
 Full software under active development can be found at https://github.com/hongquanli/octopi-research
